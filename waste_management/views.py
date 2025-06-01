@@ -294,7 +294,7 @@ def prebooking(request):
     if request.method == 'POST':
         action = request.POST.get('action')  # Changed from 'leave' to 'action' to match HTML
         print(f"Request method: {request.method}, Action: {action}, POST data: {request.POST}")  # Debug
-
+#knsdklfklsld
         if action == 'leave':
             unavailable_date = request.POST.get('unavailable_date')
             if not unavailable_date:
