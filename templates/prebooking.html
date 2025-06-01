@@ -60,14 +60,101 @@
         outline: none;
       }
 
-      .container {
+      .main-content {
         max-width: 800px;
         margin: 2rem auto;
+        padding: 0 1rem;
+        position: relative;
+      }
+
+      .container {
         padding: 2rem;
         background: var(--white);
         border-radius: 10px;
         box-shadow: 0 4px 15px var(--shadow);
-        position: relative;
+      }
+
+      .sidebar {
+        width: 300px;
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px var(--shadow);
+        position: fixed;
+        top: 0;
+        right: -320px; /* Hidden by default */
+        height: 100%;
+        max-height: 100vh;
+        overflow-y: auto;
+        transition: right 0.3s ease-in-out;
+        z-index: 1000;
+      }
+
+      .sidebar.active {
+        right: 0; /* Slide in when active */
+      }
+
+      .sidebar h2 {
+        color: var(--green);
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .sidebar .plate-icon {
+        width: 24px;
+        height: 24px;
+        background: url("https://img.icons8.com/ios-filled/50/000000/meal.png")
+          no-repeat center;
+        background-size: contain;
+      }
+
+      .sidebar .booking-list {
+        list-style: none;
+        font-size: 0.9rem;
+      }
+
+      .sidebar .booking-item {
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        border-left: 3px solid var(--green);
+        background: var(--gray);
+        border-radius: 5px;
+      }
+
+      .sidebar .booking-item p {
+        margin: 0.25rem 0;
+      }
+
+      .sidebar .no-bookings {
+        color: var(--dark-gray);
+        font-style: italic;
+      }
+
+      .toggle-sidebar-btn {
+        background-color: var(--green);
+        color: var(--white);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.45s;
+        display: block;
+        margin: 1rem auto;
+      }
+
+      .toggle-sidebar-btn:hover {
+        background-color: var(--light-green);
+        transform: translateY(-2px);
+      }
+
+      .toggle-sidebar-btn:focus {
+        outline: 2px solid var(--light-green);
+        outline-offset: 2px;
       }
 
       h1 {
@@ -114,7 +201,7 @@
       input[type="date"]:focus,
       select:focus {
         border-color: var(--light-green);
-        box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
         outline: none;
       }
 
@@ -140,7 +227,7 @@
       }
 
       .meal-icon.dinner {
-        background-image: url("https://img.icons8.com/ios-filled/50/000000/moon-symbol.png");
+        background-image: url("https://img.icons8.com/50/000000/moon-symbol.png");
       }
 
       .food-items {
@@ -178,6 +265,27 @@
         outline-offset: 2px;
       }
 
+      input[type="number"] {
+        width: 60px;
+        padding: 0.25rem;
+        border: 2px solid var(--green);
+        border-radius: 5px;
+        font-size: 0.9rem;
+        text-align: center;
+        transition: border-color 0.3s;
+      }
+
+      input[type="number"]:focus {
+        border-color: var(--light-green);
+        outline: none;
+      }
+
+      input[type="number"]:disabled {
+        background-color: var(--gray);
+        border-color: 0.6;
+        cursor: not-allowed;
+      }
+
       .food-item.selected {
         background-color: rgba(76, 175, 80, 0.1);
       }
@@ -209,9 +317,7 @@
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.3s, transform 0.1s;
-        display: block;
-        margin: 1rem auto;
-        position: relative;
+        margin: 0.5rem;
       }
 
       button:hover {
@@ -228,6 +334,14 @@
         opacity: 0.6;
         cursor: not-allowed;
         transform: none;
+      }
+
+      .leave-btn {
+        background-color: var(--error-red);
+      }
+
+      .leave-btn:hover {
+        background-color: #b71c1c;
       }
 
       .spinner {
@@ -326,7 +440,6 @@
         background: #b71c1c;
       }
 
-      /* Penalty ticks styles */
       .penalty-container {
         display: flex;
         justify-content: center;
@@ -334,7 +447,7 @@
         gap: 10px;
         margin-bottom: 1rem;
         padding: 0.5rem;
-        background-color:rgb(183, 36, 10);
+        background-color: rgb(183, 36, 10);
         border-radius: 5px;
       }
 
@@ -386,13 +499,23 @@
           padding: 1rem;
         }
 
+        .sidebar {
+          width: 100%;
+          right: -100%;
+        }
+
+        .sidebar.active {
+          right: 0;
+        }
+
         h1 {
           font-size: 1.5rem;
         }
 
         input[type="date"],
         select,
-        button {
+        button,
+        input[type="number"] {
           font-size: 0.9rem;
           padding: 0.5rem;
         }
@@ -415,131 +538,222 @@
         <!-- <li><a href="{% url 'logout' %}">Logout</a></li> -->
       </ul>
     </nav>
-    <div class="container">
-      {% if penalty < 3 %}
-      <div class="penalty-container">
-        <span class="penalty-text">Penalties:</span>
-        <div class="penalty-ticks">
-          <div
-            class="tick-icon {% if penalty >= 1 %}filled{% else %}empty{% endif %}"
-          ></div>
-          <div
-            class="tick-icon {% if penalty >= 2 %}filled{% else %}empty{% endif %}"
-          ></div>
-          <div
-            class="tick-icon {% if penalty >= 3 %}filled{% else %}empty{% endif %}"
-          ></div>
+    <div class="main-content">
+      <button type="button" class="toggle-sidebar-btn" id="toggle-sidebar-btn">
+        View Your Plate
+      </button>
+      <div class="container">
+        {% if penalty < 3 %}
+        <div class="penalty-container">
+          <span class="penalty-text">Penalties:</span>
+          <div class="penalty-ticks">
+            <div
+              class="tick-icon {% if penalty >= 1 %}filled{% else %}empty{% endif %}"
+            ></div>
+            <div
+              class="tick-icon {% if penalty >= 2 %}filled{% else %}empty{% endif %}"
+            ></div>
+            <div
+              class="tick-icon {% if penalty >= 3 %}filled{% else %}empty{% endif %}"
+            ></div>
+          </div>
         </div>
+
+        <h1>
+          <span class="recycle-icon"></span>
+          Prebook Your Meal
+          <span class="recycle-icon"></span>
+        </h1>
+
+        {% if messages %}
+        <div class="messages" aria-live="polite">
+          {% for message in messages %}
+          <div class="{% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <form
+          method="POST"
+          id="prebooking-form"
+          action="{% url 'prebooking' %}"
+        >
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="date">Select Date for Booking</label>
+            <input
+              type="date"
+              id="date"
+              name="date"
+              min="{{ min_date }}"
+              max="{{ max_date }}"
+              required
+            />
+            <div class="inline-error" id="date-error"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="unavailable-date">Select Date for Unavailability</label>
+            <input
+              type="date"
+              id="unavailable-date"
+              name="unavailable_date"
+              min="{{ min_date }}"
+              max="{{ max_date }}"
+            />
+            <div class="inline-error" id="unavailable-date-error"></div>
+          </div>
+          <div class="form-group">
+            <label for="meal_type" class="meal-type-label">
+              Day of the Week: <span id="day-of-week" name="day-of-week"></span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="meal_type" class="meal-type-label">
+              Select Meal Type
+              <span class="meal-icon" id="meal-icon"></span>
+            </label>
+            <select id="meal_type" name="meal_type" required>
+              <option value="" disabled selected>Select a meal type</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+            </select>
+            <div class="inline-error" id="meal-type-error"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Select Food Items and Quantity</label>
+            <div class="food-items" id="food-items-breakfast">
+              {% for item in menu_items.breakfast %}
+              <div class="food-item">
+                <input
+                  type="checkbox"
+                  name="food_items"
+                  value="{{ item.meal_name }}"
+                  id="breakfast-{{ item.meal_id }}"
+                />
+                <label for="breakfast-{{ item.meal_id }}"
+                  >{{ item.meal_name }}</label
+                >
+                <input
+                  type="number"
+                  name="quantities"
+                  id="quantity-breakfast-{{ item.meal_id }}"
+                  min="1"
+                  max="{{ item.constraints }}"
+                  value="1"
+                  disabled
+                />
+              </div>
+              {% endfor %}
+            </div>
+            <div class="food-items" id="food-items-lunch">
+              {% for item in menu_items.lunch %}
+              <div class="food-item">
+                <input
+                  type="checkbox"
+                  name="food_items"
+                  value="{{ item.meal_name }}"
+                  id="lunch-{{ item.meal_id }}"
+                />
+                <label for="lunch-{{ item.meal_id }}"
+                  >{{ item.meal_name }}</label
+                >
+                <input
+                  type="number"
+                  name="quantities"
+                  id="quantity-lunch-{{ item.meal_id }}"
+                  min="1"
+                  max="{{ item.constraints }}"
+                  value="1"
+                  disabled
+                />
+              </div>
+              {% endfor %}
+            </div>
+            <div class="food-items" id="food-items-dinner">
+              {% for item in menu_items.dinner %}
+              <div class="food-item">
+                <input
+                  type="checkbox"
+                  name="food_items"
+                  value="{{ item.meal_name }}"
+                  id="dinner-{{ item.meal_id }}"
+                />
+                <label for="dinner-{{ item.meal_id }}"
+                  >{{ item.meal_name }}</label
+                >
+                <input
+                  type="number"
+                  name="quantities"
+                  id="quantity-dinner-{{ item.meal_id }}"
+                  min="1"
+                  max="{{ item.constraints }}"
+                  value="1"
+                  disabled
+                />
+              </div>
+              {% endfor %}
+            </div>
+            <div class="inline-error" id="food-items-error"></div>
+          </div>
+
+          <div class="summary" id="summary" aria-live="polite">
+            <p>Selected Items: <span id="selected-items">None</span></p>
+            <p>
+              Total: <span class="count" id="selected-count">0</span> item(s)
+            </p>
+          </div>
+
+          <input type="hidden" id="action-input" name="action" value="book" />
+          <div class="form-buttons">
+            <button type="button" id="submit-btn">
+              <span>Book Meal</span>
+              <span class="spinner"></span>
+            </button>
+            <button type="button" id="leave-btn" class="leave-btn">
+              <span>Mark as Unavailable</span>
+              <span class="spinner"></span>
+            </button>
+          </div>
+        </form>
       </div>
 
-      <h1>
-        <span class="recycle-icon"></span>
-        Prebook Your Meal
-        <span class="recycle-icon"></span>
-      </h1>
-
-      {% if messages %}
-      <div class="messages" aria-live="polite">
-        {% for message in messages %}
-        <div class="{% if message.tags %}{{ message.tags }}{% endif %}">
-          {{ message }}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <form method="POST" id="prebooking-form">
-        {% csrf_token %}
+      <aside class="sidebar" id="sidebar">
+        <button type="button" class="toggle-sidebar-btn" id="close-sidebar-btn">
+          Close
+        </button>
+        <h2>
+          <span class="plate-icon"></span>
+          Your Plate
+        </h2>
         <div class="form-group">
-          <label for="date">Select Date</label>
+          <label for="sidebar-date">View Bookings for Date</label>
           <input
             type="date"
-            id="date"
-            name="date"
+            id="sidebar-date"
+            name="sidebar-date"
             min="{{ min_date }}"
             max="{{ max_date }}"
-            required
           />
-          <div class="inline-error" id="date-error"></div>
         </div>
+        <ul class="booking-list" id="booking-list">
+          <!-- Dynamically populated via JavaScript -->
+          <li class="no-bookings">Select a date to view your bookings</li>
+        </ul>
+      </aside>
 
-        <div class="form-group">
-          <label for="meal_type" class="meal-type-label">
-            Select Meal Type
-            <span class="meal-icon" id="meal-icon"></span>
-          </label>
-          <select id="meal_type" name="meal_type" required>
-            <option value="" disabled selected>Select a meal type</option>
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="dinner">Dinner</option>
-          </select>
-          <div class="inline-error" id="meal-type-error"></div>
-        </div>
-
-        <div class="form-group">
-          <label>Select Food Items</label>
-          <div class="food-items" id="food-items-breakfast">
-            {% for item in menu_items.breakfast %}
-            <div class="food-item">
-              <input
-                type="checkbox"
-                name="food_items"
-                value="{{ item.id }}"
-                id="breakfast-{{ item.id }}"
-              />
-              <label for="breakfast-{{ item.id }}">{{ item.meal_name }}</label>
-            </div>
-            {% endfor %}
+      <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+          <h2 id="modal-title">Confirm Your Booking</h2>
+          <p id="modal-summary"></p>
+          <div class="modal-buttons">
+            <button class="cancel" id="cancel-btn">Cancel</button>
+            <button id="confirm-btn">Confirm</button>
           </div>
-          <div class="food-items" id="food-items-lunch">
-            {% for item in menu_items.lunch %}
-            <div class="food-item">
-              <input
-                type="checkbox"
-                name="food_items"
-                value="{{ item.id }}"
-                id="lunch-{{ item.id }}"
-              />
-              <label for="lunch-{{ item.id }}">{{ item.meal_name }}</label>
-            </div>
-            {% endfor %}
-          </div>
-          <div class="food-items" id="food-items-dinner">
-            {% for item in menu_items.dinner %}
-            <div class="food-item">
-              <input
-                type="checkbox"
-                name="food_items"
-                value="{{ item.id }}"
-                id="dinner-{{ item.id }}"
-              />
-              <label for="dinner-{{ item.id }}">{{ item.meal_name }}</label>
-            </div>
-            {% endfor %}
-          </div>
-          <div class="inline-error" id="food-items-error"></div>
-        </div>
-
-        <div class="summary" id="summary" aria-live="polite">
-          <p>Selected Items: <span id="selected-items">None</span></p>
-          <p>Total: <span class="count" id="selected-count">0</span> item(s)</p>
-        </div>
-
-        <button type="button" id="submit-btn">
-          <span>Book Meal</span>
-          <span class="spinner"></span>
-        </button>
-      </form>
-    </div>
-
-    <div class="modal" id="confirm-modal">
-      <div class="modal-content">
-        <h2>Confirm Your Booking</h2>
-        <p id="modal-summary"></p>
-        <div class="modal-buttons">
-          <button class="cancel" id="cancel-btn">Cancel</button>
-          <button id="confirm-btn">Confirm</button>
         </div>
       </div>
       {% else %}
@@ -557,6 +771,7 @@
     <script>
       const form = document.getElementById("prebooking-form");
       const dateInput = document.getElementById("date");
+      const unavailableDateInput = document.getElementById("unavailable-date");
       const mealTypeSelect = document.getElementById("meal_type");
       const mealIcon = document.getElementById("meal-icon");
       const foodItemsSections = {
@@ -565,18 +780,54 @@
         dinner: document.getElementById("food-items-dinner"),
       };
       const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+      const allQuantityInputs = document.querySelectorAll(
+        'input[type="number"]'
+      );
       const selectedItemsSpan = document.getElementById("selected-items");
       const selectedCountSpan = document.getElementById("selected-count");
       const submitBtn = document.getElementById("submit-btn");
+      const leaveBtn = document.getElementById("leave-btn");
       const dateError = document.getElementById("date-error");
+      const unavailableDateError = document.getElementById(
+        "unavailable-date-error"
+      );
       const mealTypeError = document.getElementById("meal-type-error");
       const foodItemsError = document.getElementById("food-items-error");
       const confirmModal = document.getElementById("confirm-modal");
+      const modalTitle = document.getElementById("modal-title");
       const modalSummary = document.getElementById("modal-summary");
       const cancelBtn = document.getElementById("cancel-btn");
       const confirmBtn = document.getElementById("confirm-btn");
+      const sidebarDateInput = document.getElementById("sidebar-date");
+      const bookingList = document.getElementById("booking-list");
+      const toggleSidebarBtn = document.getElementById("toggle-sidebar-btn");
+      const closeSidebarBtn = document.getElementById("close-sidebar-btn");
+      const sidebar = document.getElementById("sidebar");
 
-      // Update meal icon based on selection
+      // Mock booking data (replace with actual backend data)
+      const userBookings = {
+        "2025-05-28": {
+          breakfast: ["Pancakes (2)", "Orange Juice (1)"],
+          lunch: ["Chicken Curry (1)", "Rice (2)"],
+          dinner: [],
+        },
+        "2025-05-29": {
+          breakfast: [],
+          lunch: ["Salad (1)", "Soup (1)"],
+          dinner: ["Pasta (2)", "Garlic Bread (1)"],
+        },
+      };
+
+      // Toggle sidebar visibility
+      toggleSidebarBtn.addEventListener("click", () => {
+        sidebar.classList.add("active");
+      });
+
+      closeSidebarBtn.addEventListener("click", () => {
+        sidebar.classList.remove("active");
+      });
+
+      // Update meal icon and reset food items on meal type change
       mealTypeSelect.addEventListener("change", function () {
         const selectedMealType = this.value;
         mealIcon.className = "meal-icon"; // Reset classes
@@ -585,7 +836,7 @@
         }
         mealTypeError.style.display = "none";
 
-        // Hide all food items sections and reset checkboxes
+        // Hide all food items sections and reset checkboxes/quantities
         Object.values(foodItemsSections).forEach((section) => {
           section.classList.remove("active");
           section
@@ -594,6 +845,10 @@
               checkbox.checked = false;
               checkbox.parentElement.classList.remove("selected");
             });
+          section.querySelectorAll('input[type="number"]').forEach((input) => {
+            input.disabled = true;
+            input.value = 1;
+          });
         });
 
         // Show the selected meal type's food items
@@ -604,28 +859,105 @@
         updateSummary();
       });
 
-      // Update food item selection visuals and summary
+      // Enable/disable quantity input based on checkbox state
       allCheckboxes.forEach((checkbox) => {
         checkbox.addEventListener("change", function () {
           const foodItemDiv = this.parentElement;
+          const quantityInput = this.nextElementSibling.nextElementSibling;
           foodItemDiv.classList.toggle("selected", this.checked);
+          quantityInput.disabled = !this.checked;
+          if (!this.checked) {
+            quantityInput.value = 1; // Reset quantity when unchecked
+          }
           updateSummary();
           foodItemsError.style.display = "none";
         });
       });
 
-      // Update summary of selected items
+      // Update summary when quantity changes
+      allQuantityInputs.forEach((input) => {
+        input.addEventListener("change", updateSummary);
+      });
+
+      // Update summary of selected items and quantities
       function updateSummary() {
         const selectedItems = Array.from(allCheckboxes)
           .filter((checkbox) => checkbox.checked)
-          .map((checkbox) => checkbox.nextElementSibling.textContent);
+          .map((checkbox) => {
+            const name = checkbox.nextElementSibling.textContent;
+            const quantity =
+              checkbox.nextElementSibling.nextElementSibling.value;
+            return `${name} (${quantity})`;
+          });
         selectedItemsSpan.textContent = selectedItems.length
           ? selectedItems.join(", ")
           : "None";
-        selectedCountSpan.textContent = selectedItems.length;
+        const totalCount = Array.from(allCheckboxes)
+          .filter((checkbox) => checkbox.checked)
+          .reduce((sum, checkbox) => {
+            const quantity = parseInt(
+              checkbox.nextElementSibling.nextElementSibling.value
+            );
+            return sum + quantity;
+          }, 0);
+        selectedCountSpan.textContent = totalCount;
       }
 
-      // Form validation and modal display
+      // Update sidebar bookings based on selected date
+      function updateSidebarBookings() {
+        const selectedDate = sidebarDateInput.value;
+        bookingList.innerHTML = "";
+
+        if (!selectedDate) {
+          bookingList.innerHTML =
+            '<li class="no-bookings">Select a date to view your bookings</li>';
+          return;
+        }
+
+        const bookings = userBookings[selectedDate] || {
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+        };
+        let hasBookings = false;
+
+        ["breakfast", "lunch", "dinner"].forEach((mealType) => {
+          if (bookings[mealType] && bookings[mealType].length > 0) {
+            hasBookings = true;
+            const li = document.createElement("li");
+            li.className = "booking-item";
+            li.innerHTML = `
+              <p><strong>${
+                mealType.charAt(0).toUpperCase() + mealType.slice(1)
+              }</strong></p>
+              <p>${bookings[mealType].join(", ")}</p>
+            `;
+            bookingList.appendChild(li);
+          }
+        });
+
+        if (!hasBookings) {
+          bookingList.innerHTML =
+            '<li class="no-bookings">No bookings for this date</li>';
+        }
+      }
+
+      // Sidebar date change handler
+      sidebarDateInput.addEventListener("change", updateSidebarBookings);
+      document
+        .getElementById("submit-btn")
+        .addEventListener("click", function () {
+          document.getElementById("action-input").value = "book";
+          document.getElementById("meal-form").submit();
+        });
+
+      document
+        .getElementById("leave-btn")
+        .addEventListener("click", function () {
+          document.getElementById("action-input").value = "leave";
+          document.getElementById("meal-form").submit();
+        });
+      // Form validation and modal display for booking
       submitBtn.addEventListener("click", function () {
         let hasError = false;
 
@@ -661,39 +993,176 @@
 
         if (hasError) return;
 
-        // Show confirmation modal
+        // Show confirmation modal for booking
         const date = dateInput.value;
         const mealType =
           mealTypeSelect.options[mealTypeSelect.selectedIndex].text;
         const items = selectedItems
-          .map((checkbox) => checkbox.nextElementSibling.textContent)
+          .map((checkbox) => {
+            const name = checkbox.nextElementSibling.textContent;
+            const quantity =
+              checkbox.nextElementSibling.nextElementSibling.value;
+            return `${name} (${quantity})`;
+          })
           .join(", ");
+        modalTitle.textContent = "Confirm Your Booking";
         modalSummary.textContent = `You are booking ${mealType} on ${date} with the following items: ${items}. Confirm?`;
         confirmModal.style.display = "flex";
+        confirmBtn.onclick = () => {
+          confirmModal.style.display = "none";
+          submitBtn.disabled = true;
+          submitBtn.classList.add("loading");
+          form.action = "{% url 'prebooking' %}";
+          // Ensure quantities are submitted
+          selectedItems.forEach((checkbox) => {
+            const quantityInput =
+              checkbox.nextElementSibling.nextElementSibling;
+            quantityInput.disabled = false; // Enable for submission
+          });
+          form.submit();
+        };
+      });
+      dateInput.addEventListener("change", function () {
+        if (this.value) {
+          unavailableDateInput.disabled = true;
+          unavailableDateInput.value = ""; // Clear the unavailable date if booking date is selected
+        } else {
+          unavailableDateInput.disabled = false;
+        }
       });
 
+      unavailableDateInput.addEventListener("change", function () {
+        if (this.value) {
+          dateInput.disabled = true;
+          dateInput.value = ""; // Clear the booking date if unavailable date is selected
+        } else {
+          dateInput.disabled = false;
+        }
+      });
+      // Leave button handler
+      leaveBtn.addEventListener("click", function () {
+        let hasError = false;
+
+        // Validate unavailable date
+        if (!unavailableDateInput.value) {
+          unavailableDateError.textContent =
+            "Please select a date for unavailability.";
+          unavailableDateError.style.display = "block";
+          hasError = true;
+        } else {
+          unavailableDateError.style.display = "none";
+        }
+
+        if (hasError) return;
+
+        // Show confirmation modal for leave
+        const selectedDate = unavailableDateInput.value;
+        modalTitle.textContent = "Confirm Unavailability";
+        modalSummary.textContent = `You are marking yourself as unavailable for all meals on ${selectedDate}. Confirm?`;
+        confirmModal.style.display = "flex";
+        confirmBtn.onclick = () => {
+          confirmModal.style.display = "none";
+          leaveBtn.disabled = true;
+          leaveBtn.classList.add("loading");
+          form.action = "{% url 'prebooking' %}"; // Adjust URL as needed
+          const hiddenInput = document.createElement("input");
+          hiddenInput.type = "hidden";
+          hiddenInput.name = "leave";
+          hiddenInput.value = "true";
+          form.appendChild(hiddenInput);
+          // Add hidden input for date
+          const dateInputHidden = document.createElement("input");
+          dateInputHidden.type = "hidden";
+          dateInputHidden.name = "unavailable_date";
+          dateInputHidden.value = selectedDate;
+          form.appendChild(dateInputHidden);
+          form.submit();
+        };
+      });
+
+      function getDayOfWeek(dateString) {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        const days = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        return days[date.getDay()];
+      }
+
+      /* document.getElementById("date").addEventListener("change", function () {
+        const selectedDate = this.value;
+        const dayOfWeek = getDayOfWeek(selectedDate);
+
+        if (dayOfWeek) {
+          document.getElementById("day-of-week").textContent = dayOfWeek;
+          document.querySelectorAll(".food-item").forEach((el) => {
+            el.style.display = el.dataset.day === dayOfWeek ? "block" : "none";
+          });
+        }
+      }); */
+      dateInput = document.getElementById("date");
+      dateInput.addEventListener("change", function () {
+        const selectedDate = this.value;
+        const dayOfWeek = getDayOfWeek(selectedDate);
+        const dayOfWeekElement = document.getElementById("day-of-week");
+
+        if (dayOfWeek) {
+          dayOfWeekElement.textContent = dayOfWeek;
+
+          // Filter items based on day (you'll need to add data-day attributes to your HTML)
+          document.querySelectorAll(".food-item").forEach((el) => {
+            // This assumes you've added data-day attributes to your food items
+            // Example: <div class="food-item" data-day="Monday">
+            if (el.dataset.day === dayOfWeek) {
+              el.style.display = "flex"; // Match your original flex display
+            } else {
+              el.style.display = "none";
+            }
+          });
+        } else {
+          dayOfWeekElement.textContent = "";
+          // Show all items if no date selected
+          document.querySelectorAll(".food-item").forEach((el) => {
+            el.style.display = "flex";
+          });
+        }
+      });
+
+      // Also add this to handle the unavailable date input
+      unavailableDateInput.addEventListener("change", function () {
+        if (this.value) {
+          dateInput.value = ""; // Clear booking date if unavailable date is selected
+          document.getElementById("day-of-week").textContent = getDayOfWeek(
+            this.value
+          );
+        }
+      });
       // Modal cancel button
       cancelBtn.addEventListener("click", () => {
         confirmModal.style.display = "none";
       });
 
-      // Modal confirm button
-      confirmBtn.addEventListener("click", () => {
-        confirmModal.style.display = "none";
-        submitBtn.disabled = true;
-        submitBtn.classList.add("loading");
-        form.submit();
-      });
-
-      // Close modal on Escape key
+      // Close modal and sidebar on Escape key
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && confirmModal.style.display === "flex") {
-          confirmModal.style.display = "none";
+        if (e.key === "Escape") {
+          if (confirmModal.style.display === "flex") {
+            confirmModal.style.display = "none";
+          }
+          if (sidebar.classList.contains("active")) {
+            sidebar.classList.remove("active");
+          }
         }
       });
 
       // Reset summary on page load
       updateSummary();
+      updateSidebarBookings();
     </script>
   </body>
 </html>

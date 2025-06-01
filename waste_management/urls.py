@@ -36,6 +36,7 @@ urlpatterns = [
     path('Waste_Schedule/',views.Waste_Schedule,name="Waste_Schedule_page"),
     path('Waste_FAQ/',views.Waste_FAQ,name="Waste_FAQ_Page"),
     path('Waste_Quiz/',views.Waste_Quiz,name="Waste_Quiz"),
+    path("mark_unavailable/",views.mark_unavailable , name="mark_unavailable"),
     # path('user_list/',views.user_list,name='user_list'),
     path('chat/',views.chat_view , name='chat_view'),
     path("logout/",views.custom_logout_view , name="logout"),
