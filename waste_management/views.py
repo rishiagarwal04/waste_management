@@ -20,6 +20,7 @@ from tensorflow.keras.preprocessing import image
 import numpy as np
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.http import JsonResponse
 
 # Suppress warnings
 warnings.filterwarnings('ignore')
@@ -27,7 +28,7 @@ warnings.filterwarnings('ignore')
 # Load the trained model for waste classification
 model = load_model('C:/Users/maste/Downloads/waste_management_system/waste_classification_model.h5')
 categories = ['cardboard', 'compost', 'glass', 'metal', 'paper', 'plastic', 'trash']
-
+print("Model shape" , model.input_shape)
 # Database configuration
 db_config = {
     'host': 'localhost',
@@ -141,6 +142,7 @@ def predict_waste_type(img_path, model=model, categories=categories, target_size
         raise
 
 def waste_classification_view(request):
+    print("request method is :", request.method)
     if request.method == 'POST' and 'waste_image' in request.FILES:
         try:
             waste_image = request.FILES['waste_image']
@@ -148,7 +150,8 @@ def waste_classification_view(request):
                 messages.error(request, "Please upload an image file (PNG, JPG, JPEG)")
                 return render(request, 'upload_image.html')
 
-            fs = FileSystemStorage()
+            print("yeah it is working")
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             filename = fs.save(waste_image.name, waste_image)
             image_path = os.path.join(settings.MEDIA_ROOT, filename)
 
@@ -157,6 +160,7 @@ def waste_classification_view(request):
                 return render(request, 'upload_image.html')
 
             prediction, confidence = predict_waste_type(img_path=image_path)
+            print("prediction is :" , prediction)
             context = {
                 'prediction': prediction,
                 'image_url': fs.url(filename),
@@ -268,16 +272,47 @@ def prebooking(request):
             cursor.execute("SELECT COUNT(*) as penalty_count FROM has_arrived WHERE has_arrived = 0 AND id = %s", (user_id,))
             num_penalties = cursor.fetchone()['penalty_count']
             print(f"Penalty count: {num_penalties}")  # Debug
-
+            print("Sidebar date:", request.POST.get("sidebar-date"))  # Debug
             # Fetch prebooking meals for sidebar
             sidebar_date = request.POST.get("sidebar-date")
             if sidebar_date:
-                cursor.execute(
-                    "SELECT meals FROM prebookings WHERE date = %s AND id = %s",
-                    (sidebar_date, user_id)
-                )
-                prebooking_meals = cursor.fetchone()
+                if request.method == 'POST' and 'sidebar-date' in request.POST:
+            # sidebar_date = request.POST.get('sidebar-date')
+                    try:
+                        connection = pymysql.connect(**db_config)
+                        with connection.cursor() as cursor:
+                            cursor.execute(
+                                "SELECT meals, meal_type FROM prebookings WHERE date = %s AND id = %s",
+                                (sidebar_date, user_id)
+                            )
+                            bookings = cursor.fetchall()  # Changed to fetchall() to get all records
 
+                            if bookings:
+                                # Group meals by meal type
+                                grouped_bookings = {}
+                                for booking in bookings:
+                                    meal_type = booking['meal_type']
+                                    if meal_type not in grouped_bookings:
+                                        grouped_bookings[meal_type] = []
+                                    grouped_bookings[meal_type].append(booking['meals'])
+
+                                return JsonResponse({
+                                    'status': 'success',
+                                    'bookings': grouped_bookings
+                                })
+                            else:
+                                return JsonResponse({
+                                    'status': 'empty',
+                                    'message': 'No bookings for this date'
+                                })
+                    except Exception as e:
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': str(e)
+                        }, status=500)
+
+                  # Debug
+                # request.session['prebooking_meals'] = prebooking_meals
     except pymysql.Error as e:
         messages.error(request, f"Database error: {str(e)}")
         return render(request, 'prebooking.html', {
@@ -290,7 +325,8 @@ def prebooking(request):
     finally:
         if 'connection' in locals():
             connection.close()
-
+    # prebooking_meals = request.session.get("prebooking_meals")
+    print("Prebooking meals outside the function : ", prebooking_meals)
     if request.method == 'POST':
         action = request.POST.get('action')  # Changed from 'leave' to 'action' to match HTML
         print(f"Request method: {request.method}, Action: {action}, POST data: {request.POST}")  # Debug

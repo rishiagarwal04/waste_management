@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -741,9 +740,21 @@
           />
         </div>
         <ul class="booking-list" id="booking-list">
+          {% if prebooking_meals %}
+          <li class="booking-item">
+            <p><strong>{{ prebooking_meals.meal_type|capfirst }}</strong></p>
+            <p>{{ prebooking_meals.meals }}</p>
+          </li>
+          {% else %}
+          <li class="no-bookings">Select a date to view your bookings</li>
+          {% endif %}
+        </ul>
+        {% comment %}
+        <ul class="booking-list" id="booking-list">
           <!-- Dynamically populated via JavaScript -->
           <li class="no-bookings">Select a date to view your bookings</li>
         </ul>
+        {% endcomment %}
       </aside>
 
       <div class="modal" id="confirm-modal">
@@ -803,20 +814,6 @@
       const toggleSidebarBtn = document.getElementById("toggle-sidebar-btn");
       const closeSidebarBtn = document.getElementById("close-sidebar-btn");
       const sidebar = document.getElementById("sidebar");
-
-      // Mock booking data (replace with actual backend data)
-      const userBookings = {
-        "2025-05-28": {
-          breakfast: ["Pancakes (2)", "Orange Juice (1)"],
-          lunch: ["Chicken Curry (1)", "Rice (2)"],
-          dinner: [],
-        },
-        "2025-05-29": {
-          breakfast: [],
-          lunch: ["Salad (1)", "Soup (1)"],
-          dinner: ["Pasta (2)", "Garlic Bread (1)"],
-        },
-      };
 
       // Toggle sidebar visibility
       toggleSidebarBtn.addEventListener("click", () => {
@@ -904,52 +901,116 @@
       }
 
       // Update sidebar bookings based on selected date
-      function updateSidebarBookings() {
-        const selectedDate = sidebarDateInput.value;
-        bookingList.innerHTML = "";
+      /* function updateSidebarBookings() {
+          const selectedDate = sidebarDateInput.value;
+          console.log("Selected date:", selectedDate);
+          bookingList.innerHTML = "";
 
+          if (!selectedDate) {
+              bookingList.innerHTML = '<li class="no-bookings">Select a date to view your bookings</li>';
+              return;
+          }
+          else{
+            bookingList.innerHTML = '<p> {{ prebooking_meals }} </p>'
+          }
+          // Handle case when prebooking_meals is None or undefined
+          const bookings = {{ prebooking_meals }} || {};
+          console.log("Bookings data:", bookings);
+
+          let hasBookings = false;
+
+          // Check if bookings exists and has data
+          if (bookings && (bookings.meals || bookings.meal_type)) {
+              hasBookings = true;
+              const li = document.createElement("li");
+              li.className = "booking-item";
+              li.innerHTML = `
+                  <p><strong>${bookings.meal_type ? bookings.meal_type.charAt(0).toUpperCase() + bookings.meal_type.slice(1) : 'Meal'}</strong></p>
+                  <p>${bookings.meals || 'No specific items'}</p>
+              `;
+              bookingList.appendChild(li);
+          }
+
+          if (!hasBookings) {
+              bookingList.innerHTML = '<li class="no-bookings">No bookings for this date</li>';
+          }
+      }*/
+      sidebarDateInput.addEventListener("change", function () {
+        const selectedDate = this.value;
         if (!selectedDate) {
           bookingList.innerHTML =
             '<li class="no-bookings">Select a date to view your bookings</li>';
           return;
         }
 
-        const bookings = userBookings[selectedDate] || {
-          breakfast: [],
-          lunch: [],
-          dinner: [],
-        };
-        let hasBookings = false;
+        // Show loading state
+        bookingList.innerHTML =
+          '<li class="no-bookings">Loading bookings...</li>';
 
-        ["breakfast", "lunch", "dinner"].forEach((mealType) => {
-          if (bookings[mealType] && bookings[mealType].length > 0) {
-            hasBookings = true;
-            const li = document.createElement("li");
-            li.className = "booking-item";
-            li.innerHTML = `
-              <p><strong>${
-                mealType.charAt(0).toUpperCase() + mealType.slice(1)
-              }</strong></p>
-              <p>${bookings[mealType].join(", ")}</p>
-            `;
-            bookingList.appendChild(li);
-          }
-        });
+        // Create form data to include CSRF token
+        const formData = new FormData();
+        formData.append("sidebar-date", selectedDate);
+        formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
 
-        if (!hasBookings) {
-          bookingList.innerHTML =
-            '<li class="no-bookings">No bookings for this date</li>';
-        }
-      }
+        // Fetch bookings for this date from server
+        fetch("{% url 'prebooking' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            bookingList.innerHTML = "";
 
+            if (data.status === "success") {
+              // Handle multiple bookings grouped by meal type
+              for (const [mealType, meals] of Object.entries(data.bookings)) {
+                const bookingItem = document.createElement("li");
+                bookingItem.className = "booking-item";
+
+                // Capitalize first letter of meal type
+                const formattedMealType =
+                  mealType.charAt(0).toUpperCase() + mealType.slice(1);
+
+                // Join multiple meals with comma
+                const formattedMeals = meals.join(", ");
+
+                bookingItem.innerHTML = `
+                    <p><strong>${formattedMealType}</strong></p>
+                    <p>${formattedMeals}</p>
+                `;
+                bookingList.appendChild(bookingItem);
+              }
+            } else if (data.status === "empty") {
+              bookingList.innerHTML =
+                '<li class="no-bookings">No bookings found for this date</li>';
+            } else {
+              throw new Error(data.message || "Unknown error");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching bookings:", error);
+            bookingList.innerHTML =
+              '<li class="no-bookings">Error loading bookings: ' +
+              error.message +
+              "</li>";
+          });
+      });
       // Sidebar date change handler
-      sidebarDateInput.addEventListener("change", updateSidebarBookings);
-      document
-        .getElementById("submit-btn")
-        .addEventListener("click", function () {
-          document.getElementById("action-input").value = "book";
-          document.getElementById("meal-form").submit();
-        });
+      /* sidebarDateInput.addEventListener("change", updateSidebarBookings);
+            document
+              .getElementById("submit-btn")
+              .addEventListener("click", function () {
+                document.getElementById("action-input").value = "book";
+                document.getElementById("meal-form").submit();
+              }); */
 
       document
         .getElementById("leave-btn")
@@ -1097,16 +1158,16 @@
       }
 
       /* document.getElementById("date").addEventListener("change", function () {
-        const selectedDate = this.value;
-        const dayOfWeek = getDayOfWeek(selectedDate);
+              const selectedDate = this.value;
+              const dayOfWeek = getDayOfWeek(selectedDate);
 
-        if (dayOfWeek) {
-          document.getElementById("day-of-week").textContent = dayOfWeek;
-          document.querySelectorAll(".food-item").forEach((el) => {
-            el.style.display = el.dataset.day === dayOfWeek ? "block" : "none";
-          });
-        }
-      }); */
+              if (dayOfWeek) {
+                document.getElementById("day-of-week").textContent = dayOfWeek;
+                document.querySelectorAll(".food-item").forEach((el) => {
+                  el.style.display = el.dataset.day === dayOfWeek ? "block" : "none";
+                });
+              }
+            }); */
       dateInput = document.getElementById("date");
       dateInput.addEventListener("change", function () {
         const selectedDate = this.value;
