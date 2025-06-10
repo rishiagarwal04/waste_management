@@ -510,7 +510,43 @@
         h1 {
           font-size: 1.5rem;
         }
+        .navbar-container {
+          display: flex;
+          align-items: center;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 1rem;
+        }
 
+        .diet-btn {
+          background-color: var(--yellow);
+          color: var(--dark-gray);
+          border: none;
+          padding: 0.5rem 1rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s, transform 0.1s;
+          margin-right: 1rem;
+        }
+
+        .diet-btn:hover {
+          background-color: #ffb300;
+          transform: translateY(-1px);
+        }
+
+        .diet-btn:focus {
+          outline: 2px solid var(--light-green);
+          outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+          .diet-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+          }
+        }
         input[type="date"],
         select,
         button,
@@ -532,9 +568,10 @@
   <body>
     <nav class="navbar">
       <ul>
-        <!-- <li><a href="{% url 'home' %}">Home</a></li> -->
-        <!-- <li><a href="{% url 'prebooking' %}">Prebooking</a></li> -->
-        <!-- <li><a href="{% url 'logout' %}">Logout</a></li> -->
+        <li><a class="diet-btn" href="default_diet">Diet</a></li>
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="{% url 'prebooking' %}">Prebooking</a></li>
+        <li><a href="{% url 'logout' %}">Logout</a></li>
       </ul>
     </nav>
     <div class="main-content">

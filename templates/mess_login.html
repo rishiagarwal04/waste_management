@@ -127,7 +127,6 @@
         cursor: pointer;
         transition: all 0.3s ease;
         text-transform: uppercase;
-        text-decoration: none;
         letter-spacing: 1px;
         margin-top: 1rem;
         font-size: 1.1rem;
@@ -221,9 +220,7 @@
   </head>
   <body>
     <div class="login-container">
-      <button class="login-btn"><a href="mess_login" style="text-decoration:none ; color:white"> Mess Login</a></button>
-
-      <h1>Eco Login</h1>
+      <h1>Mess Login</h1>
       {% if messages %}
       <ul class="messages">
         {% for message in messages %}
@@ -234,8 +231,8 @@
       <form method="post" class="login-form">
         {% csrf_token %}
         <div class="form-group">
-          <label for="roll_no">Roll Number:</label>
-          <input type="text" id="roll_no" name="roll_no" required />
+          <label for="roll_no">Mess Name:</label>
+          <input type="text" id="roll_no" name="mess_id" required />
         </div>
 
         <div class="form-group">

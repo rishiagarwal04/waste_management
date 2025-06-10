@@ -39,6 +39,87 @@ db_config = {
     'cursorclass': pymysql.cursors.DictCursor
 }
 
+def mess_login(request):
+    if request.method == "POST":
+        mess_id = request.POST.get("mess_id")
+        password = request.POST.get("password")
+        
+        connection = pymysql.connect(**db_config)
+        with connection.cursor() as cursor:
+            cursor.execute("select mess_worker_name , password from mess_workers where mess_worker_name = %s and password = %s",(mess_id,password))
+            mess_l = cursor.fetchone()
+            print("mess chef : " , mess_l)
+            if mess_l is not None:
+                return redirect("mess_interface")
+            else:
+                messages.error(request, "Mess Worker doesn't exist. Please try Again")
+                return redirect("mess_login")
+        
+    return render(request, "mess_login.html")
+
+
+def mess_interface(request):
+    today = datetime.now().date()
+    next_days = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(4)]
+    bookings = []
+    connection = pymysql.connect(**db_config)
+    try:
+        with connection.cursor() as cursor:
+            # Fetch all users
+            cursor.execute("SELECT * FROM users")
+            users = cursor.fetchall()
+
+            for date in next_days:
+                day_name = datetime.strptime(date, "%Y-%m-%d").strftime("%A")
+
+                for user in users:
+                    user_id = user["id"]
+
+                    # Get prebooking if available
+                    cursor.execute("""
+                        SELECT * FROM prebookings
+                        WHERE id=%s AND date=%s AND on_leave=0
+                    """, (user_id, date))
+
+                    prebookings = cursor.fetchall()
+
+                    if prebookings:
+                        for pb in prebookings:
+                            bookings.append({
+                                "name": user["name"],
+                                "roll_no": user["roll_no"],
+                                "meal_type": pb["meal_type"],
+                                "items": pb["meals"],
+                                "quantity": pb["quantity"],
+                                "date": pb["date"],
+                                "source": "Prebooking"
+                            })
+                    else:
+                        # No prebooking; get default diet
+                        cursor.execute("""
+                            SELECT * FROM default_food
+                            WHERE id=%s AND day=%s AND hostel_id=%s
+                        """, (user_id, day_name, user["hostel"]))
+
+                        defaults = cursor.fetchall()
+
+                        for df in defaults:
+                            bookings.append({
+                                "name": user["name"],
+                                "roll_no": user["roll_no"],
+                                "meal_type": df["meal_type"],
+                                "items": df["items"],
+                                "quantity": df["quantity"],
+                                "date": date,
+                                "source": "Default Diet"
+                            })
+
+    finally:
+        connection.close()
+
+    return render(request, "mess_interface.html", {"bookings": bookings})
+    
+
 def signup(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -611,29 +692,109 @@ def default_diet(request):
     try:
         connection = pymysql.connect(**db_config)
         with connection.cursor() as cursor:
-            cursor.execute("SELECT hostel FROM users WHERE roll_no = %s", (request.session.get('roll_no'),))
+            # Get user info
+            cursor.execute("SELECT hostel, id FROM users WHERE roll_no = %s", 
+                          (request.session.get('roll_no'),))
             user = cursor.fetchone()
             if not user:
-                messages.error(request, "User not found.")
+                messages.error(request, "User not found. Please log in.")
                 return redirect('login')
+            
             hostel_name = user['hostel']
+            user_id = user['id']
 
+            # Get menu items for dropdowns
+            cursor.execute("SELECT meal_type, meal_name FROM menu_items WHERE hostel_name = %s", 
+                          (hostel_name,))
+            menu_items = {
+                'breakfast': [],
+                'lunch': [],
+                'dinner': []
+            }
+            for row in cursor.fetchall():
+                if row['meal_type'] in menu_items:
+                    menu_items[row['meal_type']].append(row)
+
+            # Get current default diet
+            cursor.execute("""
+                SELECT day, meal_type, items 
+                FROM default_food
+                WHERE id = %s
+                ORDER BY day, meal_type
+            """, (user_id))
+            
             default_diet = {
                 hostel_name.lower(): {
-                    "monday": [], "tuesday": [], "wednesday": [], "thursday": [], "friday": [], "saturday": [], "sunday": []
+                    "monday": [], "tuesday": [], "wednesday": [], 
+                    "thursday": [], "friday": [], "saturday": [], "sunday": []
                 }
             }
-            cursor.execute("SELECT day, meal_type, meal_name FROM default_diet WHERE hostel_name = %s", (hostel_name,))
-            rows = cursor.fetchall()
-            for row in rows:
+            
+            for row in cursor.fetchall():
                 day = row['day'].lower()
                 if day in default_diet[hostel_name.lower()]:
-                    default_diet[hostel_name.lower()][day].append(f"{row['meal_type']}: {row['meal_name']}")
+                    default_diet[hostel_name.lower()][day].append(
+                        f"{row['meal_type']}: {row['items']}"
+                    )
 
-        return render(request, 'default_diet.html', {'default_diet': default_diet, 'hostel': hostel_name})
-    except pymysql.Error as e:
-        messages.error(request, f"Database error: {str(e)}")
-        return redirect('home')
+        return render(request, 'default_diet.html', {
+            'default_diet': default_diet,
+            'hostel': hostel_name,
+            'menu_items': menu_items
+        })
+        
+    # except pymysql.Error as e:
+    #     messages.error(request, f"Database error: {str(e)}")
+    #     return redirect('default_diet')
     finally:
         if 'connection' in locals():
             connection.close()
+
+def update_default_diet(request):
+    if request.method != 'POST':
+        return redirect('default_diet')
+    
+    try:
+        connection = pymysql.connect(**db_config)
+        with connection.cursor() as cursor:
+            # Get user info
+            cursor.execute("SELECT hostel, id FROM users WHERE roll_no = %s", 
+                         (request.session.get('roll_no'),))
+            user = cursor.fetchone()
+            if not user:
+                messages.error(request, "User not found. Please log in.")
+                return redirect('login')
+            
+            hostel_name = user['hostel']
+            user_id = user['id']
+
+            # Delete existing preferences
+            cursor.execute("""
+                DELETE FROM default_food
+                WHERE hostel_id = %s AND id = %s
+            """, (hostel_name, user_id))
+
+            # Insert new preferences
+            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            meal_types = ['breakfast', 'lunch', 'dinner']
+            
+            for day in days:
+                for meal_type in meal_types:
+                    meal_name = request.POST.get(f"{day}_{meal_type}")
+                    if meal_name:
+                        cursor.execute("""
+                            INSERT INTO default_food
+                            (id, meal_type, items, quantity, day ,hostel_id)
+                            VALUES (%s, %s, %s, %s, %s,%s)
+                        """, (user_id,meal_type,meal_name , 1, day, hostel_name ))
+            
+            connection.commit()
+            messages.success(request, "Default diet preferences updated successfully!")
+            
+    except pymysql.Error as e:
+        messages.error(request, f"Error updating preferences: {str(e)}")
+    finally:
+        if 'connection' in locals():
+            connection.close()
+    
+    return redirect('default_diet')

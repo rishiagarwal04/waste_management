@@ -41,7 +41,11 @@ urlpatterns = [
     path("logout/",views.custom_logout_view , name="logout"),
     path('generater_page/',views.generater_page , name='generater_page'),
     path('community/',views.community,name="community"),
-    path("prebooking",views.prebooking , name="prebooking"),
+    path("prebooking/default_diet/" , views.default_diet , name="default_diet"),
+    # path("prebooking",views.prebooking , name="prebooking"),
+    path("prebooking/update_default_diet/" , views.update_default_diet , name="update_default_diet"),
+    path("login/mess_login/", views.mess_login , name="mess_login"),
+    path("login/mess_login/mess_interface",views.mess_interface,name="mess_interface")
 ]
 
 if settings.DEBUG:
