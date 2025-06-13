@@ -160,12 +160,41 @@
             border-radius: 50px;
         }
 
+        .complaint-list {
+            max-width: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .complaint {
+            background-color: rgb(147, 163, 147, 0.5);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .complaint img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .message {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
         @media (max-width: 500px) {
             body {
                 padding: 10px;
             }
 
-            .container, .comment {
+            .container, .comment, .complaint-list {
                 max-width: 100%;
                 padding: 20px;
             }
@@ -181,18 +210,36 @@
 <body>
     <h1>Report</h1>
     <div class="container">
-        <div class="img-area">
-            <i class='bx bxs-cloud-upload icon'></i>
-            <h3>Upload Image</h3>
-            <p>Image size must not exceed <strong>2MB</strong></p>
-        </div>
-        <input class="input" type="file" id="file" accept="image/*">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="img-area">
+                <i class='bx bxs-cloud-upload icon'></i>
+                <h3>Upload Image</h3>
+                <p>Image size must not exceed <strong>2MB</strong></p>
+            </div>
+            <input class="input" type="file" id="file" name="file" accept="image/*">
+            <div class="comment">
+                <h2>Write your complaint</h2>
+                <input class="typeb" type="text" name="comments" placeholder="Write here">
+                <button class="sub" type="submit">Submit</button>
+            </div>
+        </form>
     </div>
 
-    <div class="comment">
-        <h2>Write your complaint</h2>
-        <input class="typeb" type="text" placeholder="Write here">
-        <button class="sub">Submit</button>
+    <div class="complaint-list">
+        {% for complaint in complaints %}
+            <div class="complaint">
+                <strong>Date:</strong> {{ complaint.complaint_date }}<br />
+                <strong>Comment:</strong> {{ complaint.comments }}<br />
+                {% if complaint.image_url %}
+                    <img src="{{ complaint.image_url }}" alt="Complaint Image">
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="complaint">
+                No complaints submitted yet.
+            </div>
+        {% endfor %}
     </div>
 
     <button class="backbutton">

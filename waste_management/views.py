@@ -1,3 +1,4 @@
+from csv import Error
 from django.shortcuts import HttpResponse, redirect, render
 from django.core.files.storage import FileSystemStorage
 import pandas as pd
@@ -21,7 +22,7 @@ import numpy as np
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.http import JsonResponse
-
+from datetime import date
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
@@ -201,9 +202,62 @@ def login(request):
                 connection.close()
 
     return render(request, 'login.html')
-
 def community(request):
-    return render(request, 'community.html')
+    connection = pymysql.connect(**db_config)
+    
+    # Always try to get existing posts first
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, date, name, blog_post, title FROM community ORDER BY date DESC, id DESC")
+            blog_posts = cursor.fetchall()
+    except Exception as e:
+        print(f"Error fetching posts: {e}")
+        blog_posts = []
+    
+    if request.method == "POST":
+        title = request.POST.get("title")
+        story = request.POST.get("content")
+        
+        if title and story:  # Only proceed if both fields have content
+            try:
+                with connection.cursor() as cursor:
+                    # Get user's name
+                    cursor.execute("SELECT name FROM users WHERE roll_no = %s", (request.session.get("roll_no")))
+                    name = cursor.fetchone()
+                    
+                    if name:  # Only proceed if user exists
+                        # Check if this exact post already exists from this user
+                        cursor.execute(
+                            """SELECT id FROM community 
+                               WHERE name = %s AND title = %s AND blog_post = %s 
+                               ORDER BY date DESC LIMIT 1""",
+                            (name["name"], title, story)
+                        )
+                        existing_post = cursor.fetchone()
+                        
+                        if not existing_post:  # Only insert if it doesn't exist
+                            cursor.execute(
+                                """INSERT INTO community (date, name, blog_post, title) 
+                                   VALUES (%s, %s, %s, %s)""",
+                                (date.today(), name["name"], story, title)
+                            )
+                            connection.commit()
+                            messages.success(request, "Story submitted successfully")
+                        else:
+                            messages.info(request, "You've already submitted this story")
+            except Exception as e:
+                print(f"Error inserting post: {e}")
+                messages.error(request, f"Something went wrong... [{e}]")
+        
+        # Redirect after POST to prevent duplicate submissions
+        return redirect('community')  # Make sure you have a URL named 'community'
+    
+    connection.close()
+    return render(request, 'community.html', {'blog_post': blog_posts})
+
+def mess_complaint_interface(request):
+    pass
+
 
 def predict_waste_type(img_path, model=model, categories=categories, target_size=(256, 256)):
     try:
@@ -297,9 +351,66 @@ def Waste_FAQ(request):
     return render(request, 'FAQ.html')
 
 def Waste_Schedule(request):
+    if request.method == "POST":
+        task_name = request.POST.get("task_name")
+        task_date = request.POST.get("task_date")
+        task_time = request.POST.get("task_time")
+        task_details = request.POST.get("task_details")
+        print("task_name is :",task_name , " ",type(task_name))
+        print("task_date is : ",task_date)
+        
+        connection = pymysql.connect(**db_config)
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("Insert into schedule_task (task_name , task_date , task_time , task_comments) values(%s ,%s ,%s , %s)",(task_name,task_date,task_time,task_details))
+                messages.success(request, "Task added successfully!")
+                connection.commit()
+                print("Successfully inserted")
+        except :
+            # messages.error("Something went wrong")
+            print("something went wrong")
     return render(request, 'schedule.html')
 
 def sanitation_report(request):
+    if request.method == "POST":
+        comments = request.POST.get("comments")
+        image = request.FILES.get("file")
+        # task_name = request.GET.get("task_name") or request.session.get("task_name", None)
+        
+        # Basic validation
+        if comments:
+            if len(comments) > 1000:
+                messages.error(request, "Comments must not exceed 1000 characters.")
+            else:
+                connection = None
+                try:
+                    connection = pymysql.connect(**db_config)
+                    image_url = None
+                    if image:
+                        # Validate image size (2MB limit as per template)
+                        # if image.size > 2 * 1024 * 1024:
+                        #     messages.error(request, "Image size must not exceed 2MB.")
+                        #     return render(request, 'report.html')
+                        
+                        # Save image to filesystem
+                        fs = FileSystemStorage(location='media/complaints')
+                        filename = fs.save(image.name, image)
+                        # Generate absolute URL
+                        image_url = request.build_absolute_uri(fs.url(os.path.join('complaints', filename)))
+                        print("Image url is :",image_url)
+                        print("date is ",date.today())
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute(
+                                "INSERT INTO complaints (complaint_date, comments, image_path) VALUES (%s, %s, %s)",
+                                (date.today(), comments, image_url)
+                            )
+                        connection.commit()
+                    except Exception as e:
+                        print(f"Error inserting complaint: {e}")
+                        messages.error(request, f"Database insert error: {str(e)}")
+                except Exception as e:
+                    messages.error(request , "Something went wrong")
     return render(request, 'report.html')
 
 def facts(request):
@@ -687,11 +798,12 @@ def mark_unavailable(request):
         return redirect('prebooking')
 
     return redirect('prebooking')
-
+import logging
+logger = logging.getLogger(__name__)
 def default_diet(request):
     try:
         connection = pymysql.connect(**db_config)
-        with connection.cursor() as cursor:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             # Get user info
             cursor.execute("SELECT hostel, id FROM users WHERE roll_no = %s", 
                           (request.session.get('roll_no'),))
@@ -702,6 +814,7 @@ def default_diet(request):
             
             hostel_name = user['hostel']
             user_id = user['id']
+            logger.debug(f"User ID: {user_id}, Hostel: {hostel_name}")
 
             # Get menu items for dropdowns
             cursor.execute("SELECT meal_type, meal_name FROM menu_items WHERE hostel_name = %s", 
@@ -712,8 +825,8 @@ def default_diet(request):
                 'dinner': []
             }
             for row in cursor.fetchall():
-                if row['meal_type'] in menu_items:
-                    menu_items[row['meal_type']].append(row)
+                if row['meal_type'].lower() in menu_items:
+                    menu_items[row['meal_type'].lower()].append(row)
 
             # Get current default diet
             cursor.execute("""
@@ -721,21 +834,39 @@ def default_diet(request):
                 FROM default_food
                 WHERE id = %s
                 ORDER BY day, meal_type
-            """, (user_id))
+            """, (user_id,))
             
             default_diet = {
                 hostel_name.lower(): {
-                    "monday": [], "tuesday": [], "wednesday": [], 
-                    "thursday": [], "friday": [], "saturday": [], "sunday": []
+                    "monday": ["", "", ""], 
+                    "tuesday": ["", "", ""], 
+                    "wednesday": ["", "", ""], 
+                    "thursday": ["", "", ""], 
+                    "friday": ["", "", ""], 
+                    "saturday": ["", "", ""], 
+                    "sunday": ["", "", ""]
                 }
             }
             
-            for row in cursor.fetchall():
+            rows = cursor.fetchall()
+            if not rows:
+                logger.warning(f"No default diet entries found for user_id: {user_id}")
+            
+            for row in rows:
                 day = row['day'].lower()
+                meal_type = row['meal_type'].lower()
+                items = row['items'] or ""
+                logger.debug(f"Day: {day}, Meal Type: {meal_type}, Items: {items}")
                 if day in default_diet[hostel_name.lower()]:
-                    default_diet[hostel_name.lower()][day].append(
-                        f"{row['meal_type']}: {row['items']}"
-                    )
+                    meal_index = {'breakfast': 0, 'lunch': 1, 'dinner': 2}.get(meal_type)
+                    if meal_index is not None:
+                        default_diet[hostel_name.lower()][day][meal_index] = items
+                    else:
+                        logger.warning(f"Invalid meal_type: {meal_type} for day: {day}")
+                else:
+                    logger.warning(f"Invalid day: {day}")
+
+            logger.debug(f"Default Diet: {default_diet}")
 
         return render(request, 'default_diet.html', {
             'default_diet': default_diet,
@@ -743,58 +874,48 @@ def default_diet(request):
             'menu_items': menu_items
         })
         
-    # except pymysql.Error as e:
-    #     messages.error(request, f"Database error: {str(e)}")
-    #     return redirect('default_diet')
+    except pymysql.Error as e:
+        messages.error(request, f"Database error: {str(e)}")
+        logger.error(f"Database error: {str(e)}")
+        return redirect('default_diet')
     finally:
         if 'connection' in locals():
             connection.close()
 
 def update_default_diet(request):
-    if request.method != 'POST':
-        return redirect('default_diet')
-    
-    try:
-        connection = pymysql.connect(**db_config)
-        with connection.cursor() as cursor:
-            # Get user info
-            cursor.execute("SELECT hostel, id FROM users WHERE roll_no = %s", 
-                         (request.session.get('roll_no'),))
-            user = cursor.fetchone()
-            if not user:
-                messages.error(request, "User not found. Please log in.")
-                return redirect('login')
-            
-            hostel_name = user['hostel']
-            user_id = user['id']
-
-            # Delete existing preferences
-            cursor.execute("""
-                DELETE FROM default_food
-                WHERE hostel_id = %s AND id = %s
-            """, (hostel_name, user_id))
-
-            # Insert new preferences
-            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-            meal_types = ['breakfast', 'lunch', 'dinner']
-            
-            for day in days:
-                for meal_type in meal_types:
-                    meal_name = request.POST.get(f"{day}_{meal_type}")
-                    if meal_name:
-                        cursor.execute("""
-                            INSERT INTO default_food
-                            (id, meal_type, items, quantity, day ,hostel_id)
-                            VALUES (%s, %s, %s, %s, %s,%s)
-                        """, (user_id,meal_type,meal_name , 1, day, hostel_name ))
-            
+    if request.method == 'POST':
+        try:
+            connection = pymysql.connect(**db_config)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT hostel, id FROM users WHERE roll_no = %s", 
+                          (request.session.get('roll_no'),))
+                user = cursor.fetchone()
+                if not user:
+                    messages.error(request, "User not found. Please log in.")
+                    return redirect('login')
+                
+                hostel_name = user['hostel']
+                user_id = user['id']
+                print("user id is ", user_id)
+                # user_id = request.session.get('user_id')  # Adjust based on your auth
+                for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+                    breakfast = ','.join(request.POST.getlist(f'{day}_breakfast'))
+                    lunch = ','.join(request.POST.getlist(f'{day}_lunch'))
+                    dinner = ','.join(request.POST.getlist(f'{day}_dinner'))
+                    
+                    # Update or insert into default_food
+                    for meal_type, items in [('breakfast', breakfast), ('lunch', lunch), ('dinner', dinner)]:
+                        if items:
+                            cursor.execute("""
+                                INSERT INTO default_food (id, day, meal_type, items,hostel_id)
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON DUPLICATE KEY UPDATE items = %s
+                            """, (user_id, day, meal_type, items, hostel_name, items))
             connection.commit()
-            messages.success(request, "Default diet preferences updated successfully!")
-            
-    except pymysql.Error as e:
-        messages.error(request, f"Error updating preferences: {str(e)}")
-    finally:
-        if 'connection' in locals():
+            messages.success(request, "Preferences updated successfully!")
+        except pymysql.Error as e:
+            messages.error(request, f"Database error: {str(e)}")
+        finally:
             connection.close()
-    
+        return redirect('default_diet')
     return redirect('default_diet')

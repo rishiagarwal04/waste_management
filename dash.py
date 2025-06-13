@@ -76,6 +76,49 @@ st.subheader("Waste Volume vs. Waste Type")
 fig5 = px.scatter(filtered_df, x="Volume", y="Waste_Type", size="Volume", color="Waste_Type", hover_name="State", title="Volume vs. Waste Type", template="plotly_dark")
 st.plotly_chart(fig5, use_container_width=True)
 
+# New Visualizations for day_meal_type_waste.csv, day_meal_type_absent.csv, and hostel_waste.csv
+# Load new datasets
+df_waste = pd.read_csv('day_meal_type_waste.csv')
+df_absent = pd.read_csv('day_meal_type_absent.csv')
+df_hostel = pd.read_csv('hostel_waste.csv')
+
+# Simulate Date column for day_meal_type datasets
+date_range = pd.date_range(start="2025-06-09", end="2025-06-15")  # One week
+days = df_waste['day'].unique()
+day_to_date = {day: date for day, date in zip(days, date_range)}
+df_waste['Date'] = df_waste['day'].map(day_to_date)
+df_absent['Date'] = df_absent['day'].map(day_to_date)
+
+# Apply date filters
+# df_waste = df_waste[(df_waste['Date'] >= pd.to_datetime(date1)) & (df_waste['Date'] <= pd.to_datetime(date2))]
+# df_absent = df_absent[(df_absent['Date'] >= pd.to_datetime(date1)) & (df_absent['Date'] <= pd.to_datetime(date2))]
+
+# Visualization: Waste Volume by Day and Meal Type
+st.subheader("Canteen Waste by Day and Meal Type")
+fig6 = px.bar(df_waste, x="day", y="waste_in_kg", color="meal_type", 
+              title="Total Canteen Waste by Day and Meal Type", template="plotly_dark")
+st.plotly_chart(fig6, use_container_width=True)
+
+# Visualization: Student Absence by Day and Meal Type
+st.subheader("Student Absence by Day and Meal Type")
+fig7 = px.bar(df_absent, x="day", y="student_absent_%", color="meal_type", 
+              title="Student Absence Percentage by Day and Meal Type", template="plotly_dark")
+st.plotly_chart(fig7, use_container_width=True)
+
+# Visualization: Waste Volume by Hostel
+st.subheader("Waste Volume by Hostel")
+fig8 = px.bar(df_hostel, x="Hostel", y="waste_in_kg", 
+              title="Total Waste Volume by Hostel", template="plotly_dark")
+st.plotly_chart(fig8, use_container_width=True)
+
+# Visualization: Waste Volume vs. Student Absence
+st.subheader("Canteen Waste vs. Student Absence")
+merged_df = df_waste.merge(df_absent, on=["day", "meal_type", "Date"], how="inner")
+fig9 = px.scatter(merged_df, x="waste_in_kg", y="student_absent_%", 
+                  size="waste_in_kg", color="meal_type", hover_name="day", 
+                  title="Canteen Waste vs. Student Absence", template="plotly_dark")
+st.plotly_chart(fig9, use_container_width=True)
+
 csv_original = df.to_csv(index=False).encode('utf-8')
 st.download_button("Download Original Dataset", data=csv_original, file_name="Waste_Data.csv", mime="text/csv")
 

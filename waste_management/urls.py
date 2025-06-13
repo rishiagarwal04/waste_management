@@ -45,7 +45,8 @@ urlpatterns = [
     # path("prebooking",views.prebooking , name="prebooking"),
     path("prebooking/update_default_diet/" , views.update_default_diet , name="update_default_diet"),
     path("login/mess_login/", views.mess_login , name="mess_login"),
-    path("login/mess_login/mess_interface",views.mess_interface,name="mess_interface")
+    path("login/mess_login/mess_interface",views.mess_interface,name="mess_interface"),
+    path("login/mess_login/mess_interface",views.mess_complaint_interface,name="mess_complaint_interface")
 ]
 
 if settings.DEBUG:

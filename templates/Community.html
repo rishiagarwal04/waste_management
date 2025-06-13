@@ -15,6 +15,23 @@
         text-align: center;
       }
 
+      /* Messages */
+      .messages {
+        margin: 20px auto;
+        width: 80%;
+        max-width: 600px;
+      }
+
+      .messages .success {
+        color: #00796b;
+        font-weight: bold;
+      }
+
+      .messages .error {
+        color: #d32f2f;
+        font-weight: bold;
+      }
+
       /* Return Home Button */
       .return-btn {
         display: inline-block;
@@ -34,7 +51,6 @@
         border: 2px solid transparent;
       }
 
-      /* Hover Effect */
       .return-btn:hover {
         background: linear-gradient(90deg, #004d40, #00796b);
         color: white;
@@ -62,20 +78,36 @@
         margin: 10px 20px;
       }
 
-      /* Container for Stories */
+      /* Horizontal Scroller for Community Stories */
       .stories-container {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 20px;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 20px;
+        gap: 20px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        width: 80%;
+        max-width: 1200px;
+        margin: 20px auto;
       }
 
+      .stories-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      .stories-container {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+      }
+
+      /* Individual Story Cards */
       .story {
+        flex: 0 0 300px;
+        scroll-snap-align: start;
         background-color: #ffffff;
         border: 2px solid #00796b;
         border-radius: 10px;
-        width: 300px;
-        margin: 10px;
         padding: 20px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         text-align: left;
@@ -84,10 +116,24 @@
       .story h3 {
         color: #00796b;
         font-size: 1.5em;
+        margin-top: 0;
       }
 
       .story p {
         color: #555;
+      }
+
+      .story .date {
+        font-size: 0.9em;
+        color: #888;
+      }
+
+      /* Featured Stories БорилкиStories Container */
+      .featured-stories-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 20px;
       }
 
       /* New Story Form */
@@ -152,17 +198,27 @@
       responsibility by sharing how you minimize food waste.
     </p>
 
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+      <p class="{{ message.tags }}">{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- New Story Form -->
     <div class="new-story-form">
       <h3>Submit Your Food Waste Reduction Story</h3>
       <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        <label for="title">Title:</label>
+        <label for="title">Your Story title:</label>
         <input
           type="text"
           name="title"
           id="title"
-          placeholder="Your Food Waste Story Title"
+          placeholder="title"
+          maxlength="30"
           required
         />
 
@@ -172,18 +228,35 @@
           id="content"
           rows="5"
           placeholder="Share your experience with reducing food waste in the hostel mess..."
+          maxlength="1000"
           required
         ></textarea>
 
         <label for="image">Upload Image (optional):</label>
-        <input type="file" name="image" id="image" />
+        <input type="file" name="image" id="image" accept="image/*" />
 
         <button type="submit">Submit Story</button>
       </form>
     </div>
 
-    <!-- Stories Section -->
+    <!-- Community Stories Section -->
+    <h2>Community Stories</h2>
     <div class="stories-container">
+      {%if blog_post %} {% for post in blog_post %}
+      <div class="story">
+        <h3>{{ post.title|default:"Anonymous" }}</h3>
+        <p class="date">Posted on: {{ post.date }}</p>
+        <p>{{ post.blog_post }}</p>
+        <h4>by:{{post.name}}</h4>
+      </div>
+      {% empty %}
+      <p>No community stories yet.</p>
+      {% endfor %} {% endif %}
+    </div>
+
+    <!-- Featured Stories Section -->
+    <h2>Featured Stories</h2>
+    <div class="featured-stories-container">
       <!-- Story 1: Mess Manager -->
       <div class="story">
         <h3>A Mess Manager's Plea</h3>
