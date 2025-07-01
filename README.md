@@ -13,7 +13,7 @@ Features
 
 
 
-** Meal Pre-booking: Allows students to pre-book meals, reducing overproduction via the JIT model.**
+**Meal Pre-booking: Allows students to pre-book meals, reducing overproduction via the JIT model.**
 
 
 
@@ -21,23 +21,23 @@ Features
 
 
 
-** Data Visualization: Displays waste metrics (e.g., daily waste in kg, meal type) using dashboards built with Streamlit or similar tools.**
+**Data Visualization: Displays waste metrics (e.g., daily waste in kg, meal type) using dashboards built with Streamlit or similar tools.**
 
 
 
-** Sustainability Features: Supports composting, biogas production, and donation of edible leftovers to NGOs.**
+**Sustainability Features: Supports composting, biogas production, and donation of edible leftovers to NGOs.**
 
 
 
-** Reporting: Generates CSV reports for waste data, including day, meal type, and absence percentages.**
+**Reporting: Generates CSV reports for waste data, including day, meal type, and absence percentages.**
 
 
 
-** User Management: Role-based access for students, mess managers, and admins to manage bookings and waste data. **
+**User Management: Role-based access for students, mess managers, and admins to manage bookings and waste data. **
 
 
 
-** Responsive Interface: Built with modern web technologies for accessibility across devices. ** 
+**Responsive Interface: Built with modern web technologies for accessibility across devices. ** 
 
 
 ## Technologies Used
@@ -86,7 +86,7 @@ Steps
 
 Clone the Repository:
 
-git clone https://github.com/your-username/canteen-waste-management.git
+git clone https://github.com/rishiagarwal04/canteen-waste-management.git
 cd canteen-waste-management
 
 
