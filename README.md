@@ -33,11 +33,10 @@ Features
 
 
 
-**User Management: Role-based access for students, mess managers, and admins to manage bookings and waste data. **
+**User Management: Role-based access for students, mess managers, and admins to manage bookings and waste data.**
 
 
 
-**Responsive Interface: Built with modern web technologies for accessibility across devices. ** 
 
 
 ## Technologies Used
