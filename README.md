@@ -5,7 +5,7 @@
 
 ## Introduction
 
-** The Canteen Waste Management System aims to address the significant issue of food waste in canteens, where, for example, Kapili Hostel at IIT Guwahati generates approximately 64.47 kg of daily food waste. By automating meal pre-booking, tracking waste metrics, and integrating sustainable practices like composting and JIT preparation, the system enhances operational efficiency, reduces waste, and fosters a culture of sustainability among students and staff.**
+**The Canteen Waste Management System aims to address the significant issue of food waste in canteens, where, for example, Kapili Hostel at IIT Guwahati generates approximately 64.47 kg of daily food waste. By automating meal pre-booking, tracking waste metrics, and integrating sustainable practices like composting and JIT preparation, the system enhances operational efficiency, reduces waste, and fosters a culture of sustainability among students and staff.**
 
 Features
 
@@ -91,9 +91,9 @@ cd canteen-waste-management
 
 
 
-Set Up Backend:
+Set Up :
 
-cd server
+cd waste_management
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -124,59 +124,16 @@ python manage.py migrate
 
 
 
-Set Up Frontend (if using React):
-
-cd client
-npm install
-
-
-
 Run the Application:
 
-
-
-
-
-Start the backend:
-
-cd server
-python manage.py runserver
-
-
-
-Start the frontend (if applicable):
-
-cd client
-npm start
-
-
-
-For Streamlit dashboard:
-
-cd dashboard
-streamlit run app.py
-
-
-
-Access the Application:
+**python manage.py runserver**
 
 
 
 
 
-Backend: http://localhost:8000
 
-
-
-Frontend: http://localhost:3000
-
-
-
-Dashboard: http://localhost:8501
-
-Usage
-
-
+## Usage
 
 
 
@@ -193,30 +150,6 @@ Data Analysis: Use the Streamlit dashboard to filter by meal type (breakfast, lu
 
 
 Sustainability Actions: Implement composting or biogas production based on system recommendations.
-
-
-
-API Endpoints:
-
-
-
-
-
-GET /api/waste: Retrieve waste data.
-
-
-
-POST /api/bookings: Submit meal pre-bookings.
-
-
-
-Example:
-
-curl -X POST http://localhost:8000/api/bookings -H "Content-Type: application/json" -d '{"user_id":"123","meal_type":"lunch","quantity":1}'
-
-Contributing
-
-Contributions are welcome to enhance the system’s waste reduction capabilities. To contribute:
 
 
 
@@ -254,8 +187,8 @@ For inquiries or collaboration, contact:
 
 
 
-Email: sustainability@iitg.ac.in
+Email:rishiagarwal094a@gmail.com
 
 
 
-GitHub: your-username
+GitHub: https://github.com/rishiagarwal04
