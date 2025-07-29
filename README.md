@@ -186,7 +186,7 @@ For inquiries or collaboration, contact:
 
 
 
-Email:rishiagarwal094a@gmail.com
+Email:rishiagarwal9d2d@gmail.com
 
 
 
